@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1519906288647.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "3A76F231",
+    "lastKnownWriteTime" : 1519906328,
+    "last_content_update" : 1519910427985,
+    "path" : "~/work/RProj/WARCparser/Parse2.R",
+    "project_path" : "Parse2.R",
+    "properties" : {
+        "cursorPosition" : "6,16",
+        "scrollLine" : "0",
+        "tempName" : "Untitled2"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
