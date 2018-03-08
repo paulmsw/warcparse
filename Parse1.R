@@ -90,7 +90,7 @@ if (!dir.exists(paste(pwd,i, sep="/"))) {
 
 #################################CHECK A
 print("  #OUTER START...")
-for (i in 13:nrow(xdf)) {
+for (i in 1:numfiles) {
   
   
   
@@ -116,12 +116,14 @@ for (i in 13:nrow(xdf)) {
   ##
   ##
   ##
-  foreach(j = 1:N, .combine = c, .packages = c("uuid" ,"stringi",  "boilerpipeR", "xml2", "tokenizers", "purrr", "rvest" )) %dopar%  {
-    # for (j in 1:N) {
+  ## foreach(j = 1:N, .combine = c, .packages = c("uuid" ,"stringi",  "boilerpipeR", "xml2", "tokenizers", "purrr", "rvest" )) %dopar%  {
+  
+  foreach(j = 1:N, .combine = c) %do%  {
+  
+
     
     
     id <-  UUIDgenerate(use.time = TRUE)
-    print(id)
     
     #  if (!dir.exists(paste(pwd,i,j, sep="_")) ) {
     #    dir.create(paste(pwd,i,j, sep="_"), showWarnings = TRUE, recursive = FALSE, mode = "0777")

@@ -204,7 +204,7 @@ untidyBody <-  httpBody
   parsedTidyBody <- 
     htmlObjTidy %>% xml2::xml_find_all(xpath = ".//a") 
   
-  parsedTidyBody
+
 
     xml_child(read_html(encHTML, options = "RECOVER"))
   
@@ -214,9 +214,81 @@ untidyBody <-  httpBody
     pg <- htmlObjTidy
    
     links <- html_nodes(pg, "a") 
+    anchor_ancestry <- p_nodeSet[[1]]
+    
+    
+  
+    
+    
+     p_nodeSet <- xml2::xml_find_all(pg, xpath = ".//a")
+     
+     library(XML)
+     doc = xml2::url_parse()
+
+     xmlAncestors(count = -1L)
+     pg
+    
+  
+     x <- read_xml("<foo> <bar> text <baz/> </bar> </foo>")
+     x
+     
+     xml_name(x)
+     xml_children(x)
+     xml_text(x)
+     xml_find_all(x, ".//baz")
+     
+     h <- read_html("<html><p>Hi <b>!")
+     h
+     xml_name(h)
+     xml_text(h)
+     
+     pg <- read_html("https://en.wikipedia.org/wiki/Main_Page")
+     
+     class(pg$node)
+     links <- html_nodes(pg, "a")
+     bind_rows(lapply(xml_attrs(links), function(x) data.frame(as.list(x), stringsAsFactors=FALSE)))
+     
+     
+     pg <- read_html("https://en.wikipedia.org/wiki/Main_Page")
+     html_nodes(pg, "a") %>% 
+       map(xml_attrs) %>% 
+       map_df(~as.list(.))
+     
+     lego_movie <- read_html("http://www.imdb.com/title/tt1490017/")
+     
+     legotab <- lego_movie %>%
+       html_nodes("table") %>% .[[2]]  %>%
+        html_table(fill = TRUE)
+      
+    htable <-  pg %>% html_table(fill = TRUE) 
+     
+  
+    htmlParse(pg)
+    
+    xmlParent(pg)
+    
+    ht1 <- htmlTreeParse(lego_movie)
+    ht2 <- htmlParse(lego_movie)
+    
     links_ <- links %>% html_text()
+   
     divs <- html_nodes(pg, "div") %>% html_text()
-    ps <- html_nodes(pg, "p") %>% html_text()
+    divs_ <- pg %>% xml_find_all("div")
+   
+    xml_find_all(pg, ".//*")
+    xml_structure(pg)
+    xml_text(pg)
+    
+    x <- xml_find_all(pg)
+    
+
+      (xmlTreeParse(divs))
+    xmlElementsByTagName(divs[[1]], "variable")
+  
+    html_nodes(pg, "p") %>% html_text()
+    html_nodes(pg, "div") %>% html_text()
+    html_nodes(pg, "span") %>% html_text()
+    
     spans <- html_nodes(pg, "span")  %>% html_text()
     h1s <- html_nodes(pg, "h1") %>% html_text()
     h2s <- html_nodes(pg, "h2") %>% html_text()

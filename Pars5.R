@@ -7,22 +7,19 @@ library("spacyr")
 ## spacyr will use /anaconda/bin/python (because ask = FALSE)
 ## successfully initialized (spaCy Version: 2.0.1, language model: en
 
-i = 4
-j = 386
-library(rredis)
 library(jwatjars)
 library(rJava)
 library(jwatr)
 library(async)
-#library(MITIE)
-#spacy_initialize( python_executable = "/home/paul/anaconda3/envs/py36/bin/python3.6" ,model = "en_core_web_md", ask = F)
+library(MITIE)
+spacy_initialize( python_executable = "/home/paul/anaconda3/envs/py36/bin/python3.6" ,model = "en", ask = F)
+# spacy_initialize( python_executable = "/home/paul/anaconda3/envs/py36/bin/python3.6" ,model = "en_core_web_md", ask = F )
 
 library(tidyverse)
 library(base64url)
 library(htmltidy)
 library(jsonlite)
 library(lettercase)
-
 library(XML)
 library(rvest)
 library(httr)
@@ -40,16 +37,13 @@ library(rvest)
 
 
 Sys.setlocale('LC_ALL', 'C')
-
 idx <- as.data.frame(idx)
 
+setwd("/home/paul/wcrawl/ache/data/Bongers/data_pages/out")
+pwd <- "/home/paul/wcrawl/ache/data/Bongers/data_pages/out"
+warc <- "/home/paul/wcrawl/ache/data/Bongers/data_pages/WARC"
 
-
-pwd <- "/home/paul/wcrawl/ache/data/bong"
-warc <- paste(pwd,"WARC",sep="/")
-
-if (!dir.exists(warc)) {
-  
+if (!dir.exists(pwd)) {
   dir.create(
     paste(pwd, "", sep = ""),
     showWarnings = TRUE,
@@ -69,7 +63,7 @@ if (dir.exists(pwd)) {
   filelist  <-
     list.files(
       path = warc,
-      pattern = "*.deflate$",
+      pattern = "^crawl_data",
       all.files = FALSE,
       full.names = FALSE,
       recursive = FALSE,
@@ -78,23 +72,9 @@ if (dir.exists(pwd)) {
       no.. = FALSE
     )
   numfiles <- length(filelist)
-  
-  warcGzList  <-
-    list.files(
-      path = warc,
-      pattern = "*.warc.gz$",
-      all.files = FALSE,
-      full.names = FALSE,
-      recursive = FALSE,
-      ignore.case = FALSE,
-      include.dirs = FALSE,
-      no.. = FALSE
-    )
-  numdeflate <- length(warcGzList)
 }
-
-
-
+  
+warcfilename <- paste(warc, filelist[i], sep = "/")
 
 #CHECK B
 xdf <- NULL
@@ -106,21 +86,18 @@ library(doMC)
 library(foreach)
 #cl <- makeCluster(24)
 #registerDoParallel(cl)
-
+i = 4
+j = 386
+library(rredis)
 
 #for (i in 1:nrow(xdf)) {
 
 
 print(paste("outer starts: i = ", i, sep = " "))
-
-
-###  /home/paul/wcrawl/ache/data/bong/WARC/4
-##   /home/paul/wcrawl/ache/data/bong/WARC/4
-
 #Check for logs dir...  and if it's not there, put it there.
-if (!dir.exists(paste(warc, i, sep = "/"))) {
+if (!dir.exists(paste(pwd, i, sep = "/"))) {
   dir.create(
-    paste(warc, i, sep = "/"),
+    paste(pwd, i, sep = "/"),
     showWarnings = TRUE,
     recursive = FALSE,
     mode = "0777"
@@ -129,134 +106,79 @@ if (!dir.exists(paste(warc, i, sep = "/"))) {
 }
 
 
-warcfilename <- paste(warc, warcGzList[i], sep = "/")
+warcfilename <- paste(warc, filelist[i], sep = "/")
+
+#CHECK B
 
 
 library(async)
-
 xdf <- NULL
 xdf <- read_warc(warcfilename, warc_types = "response", include_payload = TRUE)
-
-
-
-N <- nrow(xdf) 
-
-#warc_stream_in(warcfilename)
-#str(xdf)
-
-# <-iconv(xdf, from = "latin1", to = "UTF-8", sub = "byte")
-###= 1:N, .combine = c, .packages = c("uuid" ,"stringi",  "boilerpipeR", "xml2", "tokenizers", "purrr", "rvest" )) %do%  {
-
-
-r1 <- xdf$payload[[j]]
-
-r2 <- iconv(rawToChar(r1), to = "UTF-8", from = "latin1", sub = "byte")
-
+N <- nrow(xdf)  # some magic number, possibly an overestimate
   
-httpResp <-  unlist(stri_split_fixed(str = r2, pattern = "\r\n\r\n", n = 2 ))
-
-httpHeaders <- httpResp[1]
-httpBody <- httpResp[2]
 
 
-htmlObj <- read_html(httpBody, encoding = "", options = c("RECOVER"))
 
-htmlObjTidy <- htmltidy::tidy_html(htmlObj)
-untidyBody <-  httpBody
+foreach(j = 1:N, .combine = c, .packages = c("uuid" ,"stringi",  "boilerpipeR", "xml2", "tokenizers", "purrr", "rvest" )) %do%  {
+
+  uuid <-  UUIDgenerate()
+   
+   
+  }
 
 
+  httpResp <-  unlist(stri_split_fixed(str = as.character(xdf$payload[[j]]), pattern = "\r\n\r\n", n = 2 ))  
+  library(async)
+  httpRespHeaders <- httpResp[1]
+  httpRespBody <- httpResp[2]
+  tidyHeaders <-  (httpRespHeaders )
+  tidyBody <- httpRespBody
 
   #  if (!dir.exists(paste(pwd,i,j, sep="_")) ) {
   #    dir.create(paste(pwd,i,j, sep="_"), showWarnings = TRUE, recursive = FALSE, mode = "0777")
   #    print(paste("creating dir:", paste(pwd,i,j, sep="_"), sep = " " ))
   #  }
 
-
-
+  tidyBody  %>% xmlElementsByTagName( recursive = T)
+  xml2::read_html(tidyHeaders) 
+  
+  
+  prettify(xml2::read_html(xdf$payload[[j]]))
+  
+  xdf$payload[[j]]
+  
   url <- xdf$target_uri[[j]]
-  crawldate <- xdf$profile
   base64 <- base64_urlencode(url)
   uuid_url <- UUIDgenerate(url)
   
   df <-  url %>%
-    url_parse()
-  
-  domain <- df$domain
-  domainDF <- tldextract::tldextract(domain)
-    
-  host <- domainDF$host
-  subdomain <- domainDF$subdomain
-  tld <- domainDF$tld
-  proto <- df$scheme
-  port <- df$port
-  path <- df$path
-  param <- df$parameter 
-  frag <- df$fragment
-  
-  
-  contentType <- xdf$warc_content_type[[j]]
-  crawlDate <- xdf$date[[j]]  
-  
+    url_parse() %>% as.data.frame()
   library(SocialNetworks)
   
-  xml2::html_structure(htmlObjTidy)
-
-  parsedTidyBody <- 
-    htmlObjTidy %>% xml2::xml_find_all(xpath = ".//a") 
-  
-  parsedTidyBody
-
-    xml_child(read_html(encHTML, options = "RECOVER"))
-  
-    library(rvest)
-    library(dplyr)
-    
-    pg <- htmlObjTidy
-   
-    links <- html_nodes(pg, "a") 
-    links_ <- links %>% html_text()
-    divs <- html_nodes(pg, "div") %>% html_text()
-    ps <- html_nodes(pg, "p") %>% html_text()
-    spans <- html_nodes(pg, "span")  %>% html_text()
-    h1s <- html_nodes(pg, "h1") %>% html_text()
-    h2s <- html_nodes(pg, "h2") %>% html_text()
-    h3s <- html_nodes(pg, "h3") %>% html_text()
-    h4s <- html_nodes(pg, "h4") %>% html_text()
-    h5s <- html_nodes(pg, "h5") %>% html_text()
-    
-    linksDF <- bind_rows(lapply(xml_attrs(links), function(x) data.frame(as.list(x), stringsAsFactors=FALSE)))
-    divsDF <- bind_rows(lapply(xml_attrs(divs), function(x) data.frame(as.list(x), stringsAsFactors=FALSE))) 
-    psDF <- bind_rows(lapply(xml_attrs(ps), function(x) data.frame(as.list(x), stringsAsFactors=FALSE)))   
-    spanDF <- bind_rows(lapply(xml_attrs(spans), function(x) data.frame(as.list(x), stringsAsFactors=FALSE))) 
-    
-    h1DF <- bind_rows(lapply(xml_attrs(h1s), function(x) data.frame(as.list(x), stringsAsFactors=FALSE)))     
-    h2DF <- bind_rows(lapply(xml_attrs(h2s), function(x) data.frame(as.list(x), stringsAsFactors=FALSE)))  
-    h3DF <- bind_rows(lapply(xml_attrs(h3s), function(x) data.frame(as.list(x), stringsAsFactors=FALSE)))  
-    h4DF <- bind_rows(lapply(xml_attrs(h4s), function(x) data.frame(as.list(x), stringsAsFactors=FALSE)))  
-    h5DF <- bind_rows(lapply(xml_attrs(h5s), function(x) data.frame(as.list(x), stringsAsFactors=FALSE)))  
-  
-    
-    browseVignettes("Rgraphviz")
-    
-    ## redis-cli ping
-    ## 
-    ## redis-server --loadmodule /home/paul/redis-module-graph/src/redisgraph.so &
-    
   murmaURL <- url %>% murmur3.32()
   library(jsonlite)
   library(httr)
   
- 
-  xmlObj %>% html_attr('a') 
- 
-  #print(htmlObjTidy$doc)
+  
+
+  
+  
+  
+  
+  ############  
+  
+  for(j in N:1 ) {
+   %>% map(~ iterator)%>% url_parse() %>% flatten() 
   
   df
   df2 <- df$domain %>% url_parse() 
   df3 <- c("murmer" = murmaURL,
            "base64" = base64,
            "uuid" = uuid)
-
+  
+  
+}
+  
   joined <-
     df3 %>% jsonlite::toJSON() %>% prettify( indent = 4)
   
@@ -830,4 +752,8 @@ untidyBody <-  httpBody
   
   
   
+  \
+  
+  install.packages("sand")
+   
   

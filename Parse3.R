@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 options(java.parameters = "-Xmx5g")
-
+Sys.setenv(R_HOME='/home/paul/R/x86_64-pc-linux-gnu-library/3.4')
 
 
 library(jwatjars)
@@ -22,15 +22,15 @@ library(tldextract)
 library(hashFunction)
 library(uuid)
 library(xml2)
-idx <- NULL
 library(urltools)
+library(purrr)
+library(sparkwarc)                                  
+library(sparklyr)
+library(dplyr)  
 
-
+idx <- NULL
 
 Sys.setlocale('LC_ALL', 'C')
-
-
-
 
 idx <- as.data.frame(idx)
 
@@ -77,8 +77,6 @@ xdf <- NULL
 
 
 
-# #Go to client directory
-library(doParallel)
 library(doMC)
 library(foreach)
 #cl <- makeCluster(24)
@@ -88,6 +86,7 @@ j = 48
 library(rredis)
 #require('doRedis')
 #redisWorker('jobs')
+
 
 #CHECK A
 print("  #CHECK A...")
@@ -108,7 +107,6 @@ for (i in 1:nrow(xdf)) {
   
   
   
-  
   # text <- unlist(stri_split_fixed(str = strings, pattern = "<html>", n = 2))
   warcfilename <- paste(warc, filelist[i], sep = "/")
   
@@ -116,56 +114,122 @@ for (i in 1:nrow(xdf)) {
   xdf <- NULL
   
   xdf <- read_warc(warcfilename, warc_types = "response", include_payload = TRUE)
-  
-  payload_content(url = xdf$target_uri[j], xdf$http_raw_headers[[j]], xdf$payload[[j]])
-  
+
   
   print("  #CHECK B ")
   
   N <- nrow(xdf)  # some magic number, possibly an overestimate
-  print("  #CHECK B..1 ")
-  # DF <-
-  #   data.frame(
-  #     id = as.character("", N),
-  #     i = rep("", N),
-  #     j = rep("", N),
-  #     url = rep("", N),
-  #     stringsAsFactors = FALSE
-  #   )
-  # print(dim(DF))
   
-
-  foreach(j = 1:N, .combine = c, .packages = c("uuid" ,"stringi",  "boilerpipeR", "xml2", "tokenizers", "purrr", "rvest" )) %dopar%  {
+  DF <-
+     data.frame(
+       id = as.character("", N),
+       i = rep("", N),
+       j = rep("", N),
+       url = rep("", N),
+       stringsAsFactors = FALSE
+     )
+  print(dim(DF))
+  
+  
+  
+  
+  
+  
+  
+  ##
+  ##
+  ##
+  ## foreach(j = 1:N, .combine = c, .packages = c("uuid" ,"stringi",  "boilerpipeR", "xml2", "tokenizers", "purrr", "rvest" )) %dopar%  {
     # for (j in 1:N) {
     
+  foreach(j = 1:N, .combine = c) %do%  {
     
     print("  #CHECK B..3 ")
     print(j)
     id <-  UUIDgenerate(use.time = TRUE)
     print(id)
     
-    #  if (!dir.exists(paste(pwd,i,j, sep="_")) ) {
-    #    dir.create(paste(pwd,i,j, sep="_"), showWarnings = TRUE, recursive = FALSE, mode = "0777")
-    #    print(paste("creating dir:", paste(pwd,i,j, sep="_"), sep = " " ))
-    #  }
+   
+   
+   mainTags <- list("a", "div", "p", "title", "h1", "h2", "h3", "h4", "h5")
     
-    xdf <- read_warc(system.file("extdata/sample.warc.gz", package="jwatr"),
-                     warc_types = "response", include_payload = TRUE)
+   
     
-    glimpse(xdf)
-    
+   for (i in seq(along=murmur32Input)) {
+     murmur32 <- digest(murmur32Input[i], algo="murmur32", serialize=FALSE)
+     cat(murmur32, "\n")
+     stopifnot(identical(murmur32, murmur32Output[i]))
+   }
     
     tab_warc <- glimpse(xdf)
     
-    payload_content(url = xdf$target_uri[[j]], ctype = xdf$http_protocol_content_type[j], 
-                     xdf$http_raw_headers[[j]], xdf$payload[[j]])
+    select(tab_warc, content_length, http_raw_headers)
     
-    payload <- (xdf$payload[[j]])
+     url = xdf$target_uri[[j]]
+     ctype = xdf$http_protocol_content_type[[j]]
+     headers = xdf$http_raw_headers[[j]]
+   
+     payload <- xdf$payload[[j]]
     
-    xdf$target_uri[[j]]
-    xdf$http_protocol_content_type[[j]]
+     class(payload)
+     
+     content(x = xdf$payload[[j]], "raw")
+     
+     charResponse <- rawToChar(payload, multiple = FALSE) 
+  
+
+     http_status(charResponse)     
+     content(payload, "raw")
+     library(stringi)
+     stringi::stri_enc_detect(content(payload, "raw"))
+     
+     http_status(payload)
+     content(xdf, "raw")
+     
+     GET("https://rud.is/test/untidy.html")
+     
+     
+     
+     res <- GET("https://rud.is/test/untidy.html")
+     cat(content(res, as="text"))
+     
+     urlEncoded <- base64_urlencode(url)
     
+     res <- GET("https://rud.is/test/untidy.html")
+     cat(content(res, as="text"))
+     
+
+
+     library(sparkwarc)                                  # Load extension to read warc files
+     library(sparklyr)                                   # Load sparklyr to use Spark from R
+     library(dplyr)                                      # Load dplyr to perform analysis
+     
+     spark_install()                                     # Install Apache Spark
+     
+     config <- spark_config()                            # Create a config to tune memory
+     config[["sparklyr.shell.driver-memory"]] <- "10G"   # Set driver memory to 10GB
+     
+     sc <- spark_connect(master = "local",               # Connecto to local cluster
+                         config = config)                # using custom configs
+     
+     file <- gsub("s3n://commoncrawl/",                  # mapping the S3 bucket url
+                  "http://commoncrawl.amazonaws.com/",   # into a adownloadable url
+                  sparkwarc::cc_warc(1), "warc.gz")   # from the first archive file
+
+
+     spark_read_warc(                                    # Read the warc file
+       sc,                                               # into the sc Spark connection
+       "warc",                                           # save into 'warc' table
+       "warc.gz",                                        # loading from remote gz file
+       repartition = 8,                                  # partition into 8 to maximize MBP cores
+       parse = TRUE)                                     # parse tags and attributes
     
+
+tbl(sc, "warc") %>% summarize(count = n())          # Count tags and attributes
+     
+     
+     warc_stream_in(warcfilename, package="jwatr")
+  
     pc <- payload[payload != ""]
     
     
